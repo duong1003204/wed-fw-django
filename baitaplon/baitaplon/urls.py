@@ -11,6 +11,7 @@ urlpatterns = [
     path('giohang/', include('giohang.urls')),
     path('', include('core.urls')),     
     path('donhang/', include('donhang.urls')),
+
 ]
 
 if settings.DEBUG:

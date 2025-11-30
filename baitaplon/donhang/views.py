@@ -32,9 +32,9 @@ from openpyxl import Workbook
 # --- CẤU HÌNH VNPAY DEMO ---
 # (Lấy từ Sandbox của VNPAY)
 VNPAY_TMNCODE = "BTQM0MAO" # Mã website
-VNPAY_HASH_SECRET_KEY = "4TYACLKZ3JHF73VO5QCLQXZXJS9WMTZM" # Mã bí mật
-VNPAY_URL = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html" # URL thanh toán
-VNPAY_RETURN_URL = 'http://127.0.0.1:8000/donhang/vnpay_return/' # URL VNPAY gọi về (phải khớp với urls.py)
+VNPAY_HASH_SECRET_KEY = "4TYACLKZ3JHF73VO5QCLQXZXJS9WMTZM" 
+VNPAY_URL = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html" 
+VNPAY_RETURN_URL = 'http://127.0.0.1:8000/donhang/vnpay_return/' 
 
 
 # --- 1. VIEW HIỂN THỊ TRANG CHECKOUT ---
@@ -79,9 +79,9 @@ def place_order_view(request):
         ho_ten = request.POST.get('ho_ten')
         email = request.POST.get('email')
         so_dien_thoai = request.POST.get('so_dien_thoai')
-        dia_chi = request.POST.get('dia_chi_giao') # Tên trường này phải khớp form
-        payment_method = request.POST.get('payment_method') # Tên trường này phải khớp form
-        ghi_chu = request.POST.get('ghi_chu', '') # Thêm trường ghi chú (nếu có)
+        dia_chi = request.POST.get('dia_chi_giao') 
+        payment_method = request.POST.get('payment_method') 
+        ghi_chu = request.POST.get('ghi_chu', '') 
 
         try:
             gio_hang_db = GioHang.objects.get(ma_nguoi_dung=request.user)

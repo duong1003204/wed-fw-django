@@ -77,15 +77,15 @@
                                 </div>
                                 <div class="form-group">
                                     <label>Họ và Tên</label>
-                                    <input class="form-control" type="text" name="ho_ten" value="{{ user.ho_ten|default_if_none:'' }}">
+                                    <input class="form-control" type="text" name="ho_ten" value="{{ user.ho_ten|default_if_none:'' }} " required>
                                 </div>
                                 <div class="form-group">
                                     <label>Số điện thoại</label>
-                                    <input class="form-control" type="text" name="so_dien_thoai" value="{{ user.so_dien_thoai|default_if_none:'' }}">
+                                    <input class="form-control" type="text" name="so_dien_thoai" value="{{ user.so_dien_thoai|default_if_none:'' }}" required>
                                 </div>
                                 <div class="form-group">
                                     <label>Địa chỉ</label>
-                                    <input class="form-control" type="text" name="dia_chi" value="{{ user.dia_chi|default_if_none:'' }}">
+                                    <input class="form-control" type="text" name="dia_chi" value="{{ user.dia_chi|default_if_none:'' }}" required>
                                 </div>
                                 <button type="submit" class="btn btn-primary">Cập nhật thông tin</button>
                             </form>
