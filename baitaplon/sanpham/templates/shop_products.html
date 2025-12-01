@@ -1,0 +1,67 @@
+{% load static %}
+{% for sp in sanpham %}
+<div class="col-lg-4 col-md-6 col-sm-6 pb-1">
+    <div class="product-item bg-light mb-4">
+        <div class="product-img position-relative overflow-hidden">
+            <img class="img-fluid w-100" src="{{ sp.anh_dai_dien.url }}" alt="">
+            <div class="product-action">
+                <a class="btn btn-outline-dark btn-square" href="{% url 'sanpham:chitietsanpham' sp.id %}"><i class="fa fa-shopping-cart"></i></a>
+                <a class="btn btn-outline-dark btn-square" href="{% url 'sanpham:chitietsanpham' sp.id %}"><i class="fa fa-search"></i></a>
+            </div>
+        </div>
+        <div class="text-center py-4">
+            <a class="h6 text-decoration-none text-truncate" href="{% url 'sanpham:chitietsanpham' sp.id %}">{{ sp.ten_san_pham }}</a>
+            <div class="d-flex align-items-center justify-content-center mt-2">
+                <h5>{{ sp.giakm|floatformat:0 }} VNĐ</h5><h6 class="text-muted ml-2"><del>{{ sp.gia|floatformat:0 }} VNĐ</del></h6>
+            </div>
+        </div>
+    </div>
+</div>
+{% empty %}
+<div class="col-12">
+    <div class="alert alert-info text-center">
+        <h5>Không tìm thấy sản phẩm nào</h5>
+        <p>Vui lòng thử lại với bộ lọc khác</p>
+    </div>
+</div>
+{% endfor %}
+
+{% if sanpham.has_other_pages %}
+<div class="col-12">
+    <nav>
+        <ul class="pagination justify-content-center">
+            {% with '' as query_string %}
+                {% if query %}{% with query_string|add:"&timkiem="|add:query as query_string %}{% endwith %}{% endif %}
+                {% for p in selected_prices %}{% with query_string|add:"&price="|add:p as query_string %}{% endwith %}{% endfor %}
+                {% for c in selected_colors %}{% with query_string|add:"&color="|add:c as query_string %}{% endwith %}{% endfor %}
+                {% for s in selected_sizes %}{% with query_string|add:"&size="|add:s as query_string %}{% endwith %}{% endfor %}
+            {% endwith %}
+
+            {% if sanpham.has_previous %}
+                <li class="page-item">
+                    <a class="page-link pagination-link" href="#" data-page="{{ sanpham.previous_page_number }}">Previous</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
+            {% endif %}
+            
+            {% for i in sanpham.paginator.page_range %}
+                {% if sanpham.number == i %}
+                    <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
+                {% else %}
+                    <li class="page-item"><a class="page-link pagination-link" href="#" data-page="{{ i }}">{{ i }}</a></li>
+                {% endif %}
+            {% endfor %}
+            
+            {% if sanpham.has_next %}
+                <li class="page-item">
+                    <a class="page-link pagination-link" href="#" data-page="{{ sanpham.next_page_number }}">Next</a>
+                </li>
+            {% else %}
+                <li class="page-item disabled"><a class="page-link" href="#">Next</a></li>
+            {% endif %}
+        </ul>
+    </nav>
+</div>
+{% endif %}
+

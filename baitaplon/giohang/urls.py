@@ -1,8 +1,7 @@
 from django.urls import path
 from . import views
 
-# (Nếu bạn dùng namespace, hãy giữ app_name)
-# app_name = 'giohang' 
+app_name = 'giohang'
 
 urlpatterns = [
     # URL cũ

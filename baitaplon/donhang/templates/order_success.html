@@ -17,7 +17,7 @@
         <div class="row px-xl-5">
             <div class="col-12">
                 <nav class="breadcrumb bg-light mb-30">
-                    <a class="breadcrumb-item text-dark" href="{% url 'index' %}">Home</a>
+                    <a class="breadcrumb-item text-dark" href="{% url 'trangchu:index' %}">Home</a>
                     <span class="breadcrumb-item active">Đặt hàng thành công</span>
                 </nav>
             </div>
@@ -31,8 +31,8 @@
                     <h3 class="mb-3">Đặt Hàng Thành Công!</h3>
                     <p>Cảm ơn bạn đã mua hàng. Mã đơn hàng của bạn là:</p>
                     <h4 class="mb-4">#{{ order.id }}</h4>
-                    <p>Bạn có thể theo dõi trạng thái đơn hàng trong <a href="{% url 'profile' %}">Trang cá nhân</a>.</p>
-                    <a href="{% url 'shop' %}" class="btn btn-primary">Tiếp tục mua sắm</a>
+                    <p>Bạn có thể theo dõi trạng thái đơn hàng trong <a href="{% url 'nguoidung:profile' %}">Trang cá nhân</a>.</p>
+                    <a href="{% url 'sanpham:shop' %}" class="btn btn-primary">Tiếp tục mua sắm</a>
                 </div>
             </div>
         </div>

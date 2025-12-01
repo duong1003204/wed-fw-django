@@ -1,6 +1,8 @@
 from django.urls import path
 from . import views
 
+app_name = 'donhang'
+
 urlpatterns = [
     # URL cho trang checkout
     path('checkout/', views.checkout_view, name='checkout'),

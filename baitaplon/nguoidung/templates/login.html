@@ -73,7 +73,7 @@
         </div>
       {% endif %}
       
-      <form action="{% url 'dang_nhap' %}" method="POST">
+      <form action="{% url 'nguoidung:dang_nhap' %}" method="POST">
         {% csrf_token %}
         
         <div class="form-group mb-3">
@@ -106,7 +106,7 @@
       </form>
 
       <div class="text-center mt-3">
-        <a class="help-link" href="{% url 'dang_ky' %}">
+        <a class="help-link" href="{% url 'nguoidung:dang_ky' %}">
           Chưa có tài khoản? Đăng ký ngay
         </a>
       </div>

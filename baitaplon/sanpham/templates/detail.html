@@ -15,7 +15,7 @@
     <link href="{% static 'css/style.css' %}" rel="stylesheet">
 {% endblock %}
 {% block content %}
-    <form action="{% url 'them_vao_gio_hang' %}" method="POST" id="add-to-cart-form">
+    <form action="{% url 'giohang:them_vao_gio_hang' %}" method="POST" id="add-to-cart-form">
     {% csrf_token %}
     <input type="hidden" name="san_pham_id" value="{{ ctsp.id }}">
 
@@ -187,8 +187,8 @@
                         <div class="product-img position-relative overflow-hidden">
                             <img class="img-fluid w-100" src="{{ sp.anh_dai_dien.url }}" alt="">
                             <div class="product-action">
-                                <a class="btn btn-outline-dark btn-square" href="{% url 'chitietsanpham' sp.id %}"><i class="fa fa-shopping-cart"></i></a>
-                                <a class="btn btn-outline-dark btn-square" href="{% url 'chitietsanpham' sp.id %}"><i class="fa fa-search"></i></a>
+                                <a class="btn btn-outline-dark btn-square" href="{% url 'sanpham:chitietsanpham' sp.id %}"><i class="fa fa-shopping-cart"></i></a>
+                                <a class="btn btn-outline-dark btn-square" href="{% url 'sanpham:chitietsanpham' sp.id %}"><i class="fa fa-search"></i></a>
                             </div>
                         </div>
                         <div class="text-center py-4">
@@ -221,7 +221,7 @@ $(function() {
     $('input[name="size"]').change(function() {
         const size = $(this).val();
         // Giờ đây chúng ta tìm các input màu bên trong div chung, không cần #colors-form
-        $.get("{% url 'colors_for_size' %}", { size: size, sp_id: sp_id }, function(data) {
+        $.get("{% url 'sanpham:colors_for_size' %}", { size: size, sp_id: sp_id }, function(data) {
             $('input[name="color"]').each(function() {
                 if(data.colors.includes($(this).val())){
                     $(this).prop('disabled', false).parent().show();
@@ -238,7 +238,7 @@ $(function() {
         const size = $('input[name="size"]:checked').val();
         const color = $(this).val();
         if(size && color){
-            $.get("{% url 'image_for_variant' %}", { size: size, color: color, sp_id: sp_id }, function(data) {
+            $.get("{% url 'sanpham:image_for_variant' %}", { size: size, color: color, sp_id: sp_id }, function(data) {
                 if(data.img_url) $('#product-img').attr('src', data.img_url);
             });
         }
@@ -247,74 +247,57 @@ $(function() {
 </script>
 
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const minusBtn = document.querySelector('.btn-minus');
-        const plusBtn = document.querySelector('.btn-plus');
-        // JS tìm đúng ID của input số lượng
-        const quantityInput = document.getElementById('quantity-input');
-
-        minusBtn.addEventListener('click', function() {
-            let val = parseInt(quantityInput.value);
-            if (val > 1) { // Đảm bảo số lượng không nhỏ hơn 1
-                quantityInput.value = val - 1;
+    $(document).ready(function() {
+        // TẮT code quantity trong main.js cho trang này
+        $('.quantity button').off('click');
+        
+        const quantityInput = $('#quantity-input');
+        const minusBtn = $('.btn-minus');
+        const plusBtn = $('.btn-plus');
+        
+        // Xử lý nút giảm - chỉ gắn 1 lần
+        minusBtn.off('click').on('click', function(e) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            let val = parseInt(quantityInput.val()) || 1;
+            if (val > 1) { 
+                quantityInput.val(val - 1);
             }
-            // Không cần cập nhật input ẩn
+            return false;
         });
-
-        plusBtn.addEventListener('click', function() {
-            let val = parseInt(quantityInput.value);
-            quantityInput.value = val + 1;
-            // Không cần cập nhật input ẩn
+        
+        // Xử lý nút tăng - chỉ gắn 1 lần
+        plusBtn.off('click').on('click', function(e) {
+            e.preventDefault();
+            e.stopImmediatePropagation();
+            let val = parseInt(quantityInput.val()) || 1;
+            quantityInput.val(val + 1);
+            return false;
         });
+    
+        // Validate form thêm vào giỏ
+        const addToCartForm = $('#add-to-cart-form');
+        
+        if (addToCartForm.length) {
+            addToCartForm.off('submit').on('submit', function(event) {
+                const selectedSize = $('input[name="size"]:checked');
+                const selectedColor = $('input[name="color"]:checked');
+                
+                if (!selectedSize.length) {
+                    alert('Vui lòng chọn Size trước khi thêm vào giỏ hàng.');
+                    event.preventDefault();
+                    return false;
+                }
+                
+                if (!selectedColor.length) {
+                    alert('Vui lòng chọn Màu sắc trước khi thêm vào giỏ hàng.');
+                    event.preventDefault();
+                    return false;
+                }
+            });
+        }
     });
 </script>
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const minusBtn = document.querySelector('.btn-minus');
-        const plusBtn = document.querySelector('.btn-plus');
-        const quantityInput = document.getElementById('quantity-input');
-
-        if (minusBtn && plusBtn && quantityInput) { // Thêm kiểm tra
-            minusBtn.addEventListener('click', function() {
-                let val = parseInt(quantityInput.value);
-                if (val > 1) { 
-                    quantityInput.value = val - 1;
-                }
-            });
-            plusBtn.addEventListener('click', function() {
-                let val = parseInt(quantityInput.value);
-                quantityInput.value = val + 1;
-            });
-        }
-    
-        // --- LOGIC MỚI: VALIDATE FORM THÊM VÀO GIỎ ---
-        const addToCartForm = document.getElementById('add-to-cart-form');
-        
-        if (addToCartForm) { // Đảm bảo form tồn tại
-            addToCartForm.addEventListener('submit', function(event) {
-                const selectedSize = document.querySelector('input[name="size"]:checked');
-                const selectedColor = document.querySelector('input[name="color"]:checked');
-                
-                // Kiểm tra Size
-                if (!selectedSize) {
-                    alert('Vui lòng chọn Size trước khi thêm vào giỏ hàng.');
-                    event.preventDefault(); // Ngăn form gửi đi
-                    return;
-                }
-                
-                // Kiểm tra Màu
-                if (!selectedColor) {
-                    alert('Vui lòng chọn Màu sắc trước khi thêm vào giỏ hàng.');
-                    event.preventDefault(); // Ngăn form gửi đi
-                    return;
-                }
-                
-                // Nếu đã chọn cả hai, form sẽ được gửi đi bình thường
-            });
-        }
-        // 
-    });
-    </script>
 
 
 <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>

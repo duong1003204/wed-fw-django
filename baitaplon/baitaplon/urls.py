@@ -5,6 +5,7 @@ from django.conf.urls.static import static
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    path('quanly/', include('quanly.urls')),
     path('', include('trangchu.urls')),
     path('sanpham/', include('sanpham.urls')),
     path('nguoidung/', include('nguoidung.urls')),
@@ -17,5 +18,6 @@ urlpatterns = [
 if settings.DEBUG:
     # Media files (uploaded images)
     urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-    # Static files (CSS, JS)
-    urlpatterns += static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
+    # Static files (CSS, JS) - chỉ serve khi DEBUG=True
+    from django.contrib.staticfiles.urls import staticfiles_urlpatterns
+    urlpatterns += staticfiles_urlpatterns()

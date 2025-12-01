@@ -1,5 +1,5 @@
 {% load static %}
-<form action="{% url 'shop' %}" method="GET" class="search-form">
+<form action="{% url 'sanpham:shop' %}" method="GET" class="search-form">
     <div class="input-group position-relative">
         <input type="text"
                class="form-control search-input"
@@ -44,7 +44,7 @@ document.addEventListener('DOMContentLoaded',()=> {
         if (q.length < 2) { box.style.display='none'; return; }
 
         timer = setTimeout(()=> {
-            fetch(`{% url 'search_suggestions' %}?q=${encodeURIComponent(q)}`)
+            fetch(`{% url 'core:search_suggestions' %}?q=${encodeURIComponent(q)}`)
                 .then(r=>r.json())
                 .then(d=> {
                     list.innerHTML = '';

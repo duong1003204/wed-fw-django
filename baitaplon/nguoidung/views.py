@@ -53,6 +53,9 @@ def chuyen_gio_hang_session_vao_db(request):
 
 
 def dangnhap_view(request):
+    if request.user.is_authenticated:
+        return redirect('trangchu:index')
+    
     if request.method == 'POST':
         form = AuthenticationForm(request, data=request.POST)
         if form.is_valid():
@@ -60,10 +63,14 @@ def dangnhap_view(request):
             password = form.cleaned_data.get('password')
             user = authenticate(username=username, password=password)
             if user is not None:
-                auth_login(request, user)
-                chuyen_gio_hang_session_vao_db(request) 
-                messages.info(request, f"Chào mừng trở lại, {username}!")
-                return redirect('/')
+                if user.trang_thai:  # Kiểm tra trạng thái tài khoản
+                    auth_login(request, user)
+                    chuyen_gio_hang_session_vao_db(request) 
+                    messages.success(request, f"Chào mừng trở lại, {user.ho_ten or username}!")
+                    next_url = request.GET.get('next', '/')
+                    return redirect(next_url)
+                else:
+                    messages.error(request, "Tài khoản của bạn đã bị khóa.")
             else:
                 messages.error(request, "Tên đăng nhập hoặc mật khẩu không đúng.")
         else:
@@ -76,16 +83,16 @@ def dangnhap_view(request):
 
 def dangky_view(request):
     if request.user.is_authenticated:
-        return redirect('/') 
+        return redirect('trangchu:index') 
     if request.method == 'POST':
         form = NguoiDungCreationForm(request.POST) 
         if form.is_valid():
             user = form.save() 
-            GioHang.objects.create(ma_nguoi_dung=user) 
+            GioHang.objects.get_or_create(ma_nguoi_dung=user) 
             auth_login(request, user)
             chuyen_gio_hang_session_vao_db(request)
-            messages.success(request, "Đăng ký thành công!") 
-            return redirect('/')
+            messages.success(request, f"Đăng ký thành công! Chào mừng {user.ho_ten or user.username}!") 
+            return redirect('trangchu:index')
         else:
             for field, errors in form.errors.items():
                 for error in errors:
@@ -125,7 +132,7 @@ def profile_view(request):
             user.save()
             
             messages.success(request, 'Cập nhật thông tin cá nhân thành công!')
-            return redirect('profile')
+            return redirect('nguoidung:profile')
 
         elif action == 'change_password':
             active_tab = 'password' 
@@ -135,7 +142,7 @@ def profile_view(request):
                 user = password_form.save()
                 update_session_auth_hash(request, user) 
                 messages.success(request, 'Đổi mật khẩu thành công!')
-                return redirect('profile') # Redirect về trang profile (tab mặc định)
+                return redirect('nguoidung:profile') # Redirect về trang profile (tab mặc định)
             else:
                 messages.error(request, 'Đổi mật khẩu thất bại. Vui lòng kiểm tra các lỗi bên dưới.')
     
@@ -160,8 +167,11 @@ def cancel_order_view(request, order_id):
         order.save()
         messages.success(request, f'Đã hủy thành công đơn hàng #{order.id}.')
     else:
-        messages.error(request, f'Không thể hủy đơn hàng #{order.id} (Trạng thái: {order.get_trang_thai_don_hang_display()}).')
-    return redirect('profile') 
+        # Lấy tên trạng thái từ choices (DonHang đã được import ở đầu file)
+        trang_thai_dict = dict(DonHang.TRANG_THAI_CHOICES)
+        trang_thai_display = trang_thai_dict.get(order.trang_thai_don_hang, order.trang_thai_don_hang)
+        messages.error(request, f'Không thể hủy đơn hàng #{order.id} (Trạng thái: {trang_thai_display}).')
+    return redirect('nguoidung:profile') 
 
 
 @login_required

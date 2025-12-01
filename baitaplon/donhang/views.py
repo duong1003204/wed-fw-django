@@ -1,45 +1,43 @@
-from django.shortcuts import render
-
-# Create your views here.
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.contrib import messages
 from django.conf import settings
 from django.urls import reverse
-from django.http import HttpResponseRedirect
-import hmac
-import hashlib
-import urllib.parse
-import requests
-import json
-from datetime import datetime
-import pytz # Thêm import pytz
-
-from django.shortcuts import render
+from django.http import HttpResponseRedirect, HttpResponse
 from django.views import View
 from django.db.models import Sum, Count
 from django.db.models.functions import TruncDay
-from .models import DonHang, ChiTietDonHang
-from datetime import timedelta
 from django.utils import timezone
 from django.contrib.admin.views.decorators import staff_member_required
 from django.utils.decorators import method_decorator
+from datetime import datetime, timedelta
+import hmac
+import hashlib
+import urllib.parse
+import json
+import pytz
+from openpyxl import Workbook
+
 # Import các models
 from giohang.models import GioHang, ChiTietGioHang
 from .models import DonHang, ChiTietDonHang
-from django.http import HttpResponse
-from openpyxl import Workbook
+
 # --- CẤU HÌNH VNPAY DEMO ---
-# (Lấy từ Sandbox của VNPAY)
-VNPAY_TMNCODE = "BTQM0MAO" # Mã website
+VNPAY_TMNCODE = "BTQM0MAO" 
 VNPAY_HASH_SECRET_KEY = "4TYACLKZ3JHF73VO5QCLQXZXJS9WMTZM" 
 VNPAY_URL = "https://sandbox.vnpayment.vn/paymentv2/vpcpay.html" 
 VNPAY_RETURN_URL = 'http://127.0.0.1:8000/donhang/vnpay_return/' 
 
 
 # --- 1. VIEW HIỂN THỊ TRANG CHECKOUT ---
-@login_required
 def checkout_view(request):
+    # === FIX: KIỂM TRA ĐĂNG NHẬP THỦ CÔNG ===
+    if not request.user.is_authenticated:
+        messages.warning(request, "Vui lòng đăng nhập để tiến hành thanh toán.")
+        # Sửa 'login' thành 'dang_nhap' để khớp với urls.py của bạn
+        return redirect('nguoidung:dang_nhap') 
+    # =========================================
+
     # Lấy giỏ hàng của người dùng
     try:
         gio_hang_db = GioHang.objects.get(ma_nguoi_dung=request.user)
@@ -47,18 +45,18 @@ def checkout_view(request):
         
         if not cart_items.exists():
             messages.error(request, "Giỏ hàng của bạn đang trống.")
-            return redirect('gio_hang_view')
+            return redirect('giohang:gio_hang_view')
             
     except GioHang.DoesNotExist:
         messages.error(request, "Giỏ hàng của bạn đang trống.")
-        return redirect('gio_hang_view')
+        return redirect('giohang:gio_hang_view')
 
     # Tính toán tổng tiền
     subtotal = 0
     for item in cart_items:
-        subtotal += item.tong_tien_item # Dùng property 'tong_tien_item' từ model
+        subtotal += item.tong_tien_item 
     
-    shipping_fee = 10 # Phí ship (ví dụ)
+    shipping_fee = 10 
     total = subtotal + shipping_fee
 
     context = {
@@ -66,7 +64,7 @@ def checkout_view(request):
         'subtotal': subtotal,
         'shipping_fee': shipping_fee,
         'total': total,
-        'user': request.user # Gửi thông tin user để điền form
+        'user': request.user 
     }
     return render(request, 'checkout.html', context)
 
@@ -76,22 +74,33 @@ def checkout_view(request):
 def place_order_view(request):
     if request.method == 'POST':
         # Lấy thông tin từ form
-        ho_ten = request.POST.get('ho_ten')
-        email = request.POST.get('email')
-        so_dien_thoai = request.POST.get('so_dien_thoai')
-        dia_chi = request.POST.get('dia_chi_giao') 
-        payment_method = request.POST.get('payment_method') 
-        ghi_chu = request.POST.get('ghi_chu', '') 
+        ho_ten = request.POST.get('ho_ten', '').strip()
+        email = request.POST.get('email', '').strip()
+        so_dien_thoai = request.POST.get('so_dien_thoai', '').strip()
+        dia_chi = request.POST.get('dia_chi_giao', '').strip()
+        payment_method = request.POST.get('payment_method', 'cod')
+        ghi_chu = request.POST.get('ghi_chu', '').strip()
+        
+        # Validation
+        if not ho_ten:
+            messages.error(request, "Vui lòng nhập họ tên.")
+            return redirect('donhang:checkout')
+        if not dia_chi:
+            messages.error(request, "Vui lòng nhập địa chỉ giao hàng.")
+            return redirect('donhang:checkout')
+        if payment_method not in ['cod', 'vnpay']:
+            messages.error(request, "Phương thức thanh toán không hợp lệ.")
+            return redirect('donhang:checkout') 
 
         try:
             gio_hang_db = GioHang.objects.get(ma_nguoi_dung=request.user)
             cart_items = ChiTietGioHang.objects.filter(ma_gio_hang=gio_hang_db)
             if not cart_items.exists():
                 messages.error(request, "Giỏ hàng trống, không thể đặt hàng.")
-                return redirect('gio_hang_view')
+                return redirect('giohang:gio_hang_view')
         except GioHang.DoesNotExist:
             messages.error(request, "Lỗi giỏ hàng.")
-            return redirect('gio_hang_view')
+            return redirect('giohang:gio_hang_view')
 
         subtotal = 0
         for item in cart_items:
@@ -106,19 +115,35 @@ def place_order_view(request):
                 tong_tien=total,
                 dia_chi_giao=dia_chi,
                 phuong_thuc_thanh_toan=payment_method,
-                trang_thai_don_hang='cho_xu_ly', # Trạng thái ban đầu
+                trang_thai_don_hang='cho_xu_ly', 
                 ghi_chu=ghi_chu
             )
 
             # Chuyển sản phẩm từ giỏ hàng sang Chi Tiết Đơn Hàng
             for item in cart_items:
-                ChiTietDonHang.objects.create(
-                    ma_don_hang=don_hang,
-                    ma_san_pham=item.ma_san_pham,
-                    so_luong=item.so_luong,
-                    gia=item.ma_san_pham.giakm, # Lưu giá tại thời điểm mua
-                    thanh_tien=item.tong_tien_item # Lưu thành tiền
-                )
+                # Sử dụng giá khuyến mãi nếu có, nếu không thì dùng giá gốc
+                gia_ban = item.ma_san_pham.giakm if item.ma_san_pham.giakm and item.ma_san_pham.giakm > 0 else item.ma_san_pham.gia
+                
+                # Tạo chi tiết đơn hàng với size và color (nếu migration đã chạy)
+                try:
+                    ChiTietDonHang.objects.create(
+                        ma_don_hang=don_hang,
+                        ma_san_pham=item.ma_san_pham,
+                        so_luong=item.so_luong,
+                        size=item.size,  # Lưu size
+                        color=item.color,  # Lưu color
+                        gia=gia_ban,
+                        thanh_tien=item.tong_tien_item 
+                    )
+                except Exception as e:
+                    # Nếu chưa có field size/color (chưa chạy migration), tạo không có size/color
+                    ChiTietDonHang.objects.create(
+                        ma_don_hang=don_hang,
+                        ma_san_pham=item.ma_san_pham,
+                        so_luong=item.so_luong,
+                        gia=gia_ban,
+                        thanh_tien=item.tong_tien_item 
+                    )
             
             # Xóa giỏ hàng (ChiTietGioHang)
             cart_items.delete()
@@ -127,17 +152,16 @@ def place_order_view(request):
             if payment_method == 'cod':
                 # (Thanh toán khi nhận hàng)
                 messages.success(request, 'Đặt hàng COD thành công!')
-                return redirect('order_success', order_id=don_hang.id)
+                return redirect('donhang:order_success', order_id=don_hang.id)
 
             elif payment_method == 'vnpay':
                 # (Thanh toán VNPAY)
-                # Chuyển hướng đến VNPAY
                 
                 # Cài đặt múi giờ Việt Nam
                 vnp_CreateDate = datetime.now(pytz.timezone('Asia/Ho_Chi_Minh')).strftime('%Y%m%d%H%M%S')
-                vnp_Amount = int(total * 100) # VNPAY yêu cầu số nguyên (nhân 100)
+                vnp_Amount = int(total * 100) 
                 vnp_OrderInfo = f"Thanh toan don hang {don_hang.id}"
-                vnp_TxnRef = str(don_hang.id) # Mã đơn hàng của bạn
+                vnp_TxnRef = str(don_hang.id) 
                 vnp_IpAddr = request.META.get('REMOTE_ADDR')
 
                 input_data = {
@@ -176,13 +200,14 @@ def place_order_view(request):
 
         except Exception as e:
             messages.error(request, f"Đã xảy ra lỗi khi tạo đơn hàng: {e}")
-            return redirect('checkout')
+            return redirect('donhang:checkout')
 
     messages.error(request, "Yêu cầu không hợp lệ.")
-    return redirect('checkout')
+    return redirect('donhang:checkout')
 
 
 # --- 3. VIEW XỬ LÝ KẾT QUẢ VNPAY TRẢ VỀ ---
+@login_required
 def vnpay_return_view(request):
     # Lấy dữ liệu VNPAY trả về
     input_data = request.GET.dict()
@@ -207,10 +232,10 @@ def vnpay_return_view(request):
         # Lấy mã đơn hàng
         order_id = input_data.get('vnp_TxnRef', None)
         try:
-            don_hang = DonHang.objects.get(id=order_id)
+            don_hang = DonHang.objects.get(id=order_id, ma_nguoi_dung=request.user)
         except DonHang.DoesNotExist:
             messages.error(request, "Lỗi: Không tìm thấy đơn hàng.")
-            return redirect('index') # Về trang chủ
+            return redirect('trangchu:index') 
 
         # --- KIỂM TRA HASH (Quan trọng) ---
         if new_secure_hash == vnp_SecureHash:
@@ -219,7 +244,7 @@ def vnpay_return_view(request):
             # --- THANH TOÁN THÀNH CÔNG ---
             if vnp_ResponseCode == '00':
                 messages.success(request, f"Thanh toán VNPAY thành công cho đơn hàng #{order_id}!")
-                return redirect('order_success', order_id=don_hang.id)
+                return redirect('donhang:order_success', order_id=don_hang.id)
             
             # --- THANH TOÁN THẤT BẠI (hoặc bị hủy) ---
             else:
@@ -227,20 +252,30 @@ def vnpay_return_view(request):
                 don_hang.trang_thai_don_hang = 'da_huy'
                 don_hang.save()
                 
-                # (Bạn có thể thêm logic hoàn trả sản phẩm vào giỏ hàng ở đây nếu muốn)
-                
-                messages.error(request, f"Thanh toán VNPAY thất bại (Mã lỗi: {vnp_ResponseCode}). Đơn hàng #{order_id} đã bị hủy.")
-                return redirect('gio_hang_view') # Quay lại giỏ hàng
+                error_messages = {
+                    '07': 'Trừ tiền thành công. Giao dịch bị nghi ngờ (liên quan tới lừa đảo, giao dịch bất thường).',
+                    '09': 'Thẻ/Tài khoản chưa đăng ký dịch vụ InternetBanking',
+                    '10': 'Xác thực giao dịch không thành công do: Nhập sai mật khẩu quá số lần quy định.',
+                    '11': 'Đã hết hạn chờ thanh toán. Xin vui lòng thực hiện lại giao dịch.',
+                    '12': 'Thẻ/Tài khoản bị khóa.',
+                    '51': 'Tài khoản không đủ số dư để thực hiện giao dịch.',
+                    '65': 'Tài khoản đã vượt quá hạn mức giao dịch trong ngày.',
+                    '75': 'Ngân hàng thanh toán đang bảo trì.',
+                    '79': 'Nhập sai mật khẩu thanh toán quá số lần quy định.',
+                }
+                error_msg = error_messages.get(vnp_ResponseCode, f'Mã lỗi: {vnp_ResponseCode}')
+                messages.error(request, f"Thanh toán VNPAY thất bại ({error_msg}). Đơn hàng #{order_id} đã bị hủy.")
+                return redirect('giohang:gio_hang_view') 
         
         # --- LỖI SAI HASH ---
         else:
             messages.error(request, "Lỗi bảo mật: Chữ ký VNPAY không hợp lệ.")
-            don_hang.trang_thai_don_hang = 'da_huy' # Hủy đơn hàng nếu hash sai
+            don_hang.trang_thai_don_hang = 'da_huy' 
             don_hang.save()
-            return redirect('gio_hang_view')
+            return redirect('giohang:gio_hang_view')
             
     messages.error(request, "Không nhận được dữ liệu trả về từ VNPAY.")
-    return redirect('gio_hang_view')
+    return redirect('giohang:gio_hang_view')
 
 
 # --- 4. VIEW ĐẶT HÀNG THÀNH CÔNG ---
@@ -248,17 +283,16 @@ def vnpay_return_view(request):
 def order_success_view(request, order_id):
     try:
         order = DonHang.objects.get(id=order_id, ma_nguoi_dung=request.user)
+        order_items = order.chi_tiet.all()
     except DonHang.DoesNotExist:
         messages.error(request, "Không tìm thấy đơn hàng.")
-        return redirect('index')
+        return redirect('trangchu:index')
         
     context = {
-        'order': order
+        'order': order,
+        'order_items': order_items
     }
     return render(request, 'order_success.html', context)
-
-
-@method_decorator(staff_member_required, name='dispatch')
 
 
 @method_decorator(staff_member_required, name='dispatch')

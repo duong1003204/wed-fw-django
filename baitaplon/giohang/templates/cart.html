@@ -3,149 +3,246 @@
 
 {% block cssblock %}
     <link href="{% static 'img/favicon.ico' %}" rel="icon">
-
     <link rel="preconnect" href="https://fonts.gstatic.com">
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">  
-
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
-
     <link href="{% static 'lib/animate/animate.min.css' %}" rel="stylesheet">
     <link href="{% static 'lib/owlcarousel/assets/owl.carousel.min.css' %}" rel="stylesheet">
-
     <link href="{% static 'css/style.css' %}" rel="stylesheet">
+    <style>
+        .quantity-btn {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .quantity-btn:hover {
+            transform: scale(1.1);
+        }
+        .quantity-btn:active {
+            transform: scale(0.95);
+        }
+        .cart-item-row {
+            transition: all 0.3s ease;
+        }
+        .cart-item-row.removing {
+            opacity: 0;
+            transform: translateX(-20px);
+        }
+    </style>
 {% endblock %}
 
 {% block content %}
+<div class="container-fluid py-5">
+    <div class="row px-xl-5">
+        <div class="col-lg-8 table-responsive mb-5">
+            <table class="table table-light table-borderless table-hover text-center mb-0">
+                <thead class="thead-dark">
+                    <tr>
+                        <th>Products</th>
+                        <th>Price</th>
+                        <th>Size / Color</th>
+                        <th>Quantity</th>
+                        <th>Total</th>
+                        <th>Remove</th>
+                    </tr>
+                </thead>
+                <tbody class="align-middle" id="cart-items">
+                    {% for item in chi_tiet_gio_hang %}
+                    <tr class="cart-item-row" data-item-id="{% if user.is_authenticated %}{{ item.id }}{% else %}{{ item.id_session_key }}{% endif %}">
+                        <td class="align-middle text-left">
+                            <img src="{{ item.ma_san_pham.anh_dai_dien.url }}" alt="" style="width: 50px;"> 
+                            {{ item.ma_san_pham.ten_san_pham }}
+                        </td>
+                        <td class="align-middle">
+                            {% if item.ma_san_pham.giakm and item.ma_san_pham.giakm > 0 %}
+                                {{ item.ma_san_pham.giakm|floatformat:0 }} VNĐ
+                            {% else %}
+                                {{ item.ma_san_pham.gia|floatformat:0 }} VNĐ
+                            {% endif %}
+                        </td>
+                        <td class="align-middle">{{ item.size }} / {{ item.color }}</td>
+                        <td class="align-middle">
+                            <div class="input-group quantity mx-auto" style="width: 100px;">
+                                <div class="input-group-btn">
+                                    <button type="button" 
+                                            class="btn btn-sm btn-primary quantity-btn btn-minus" 
+                                            data-item-id="{% if user.is_authenticated %}{{ item.id }}{% else %}{{ item.id_session_key }}{% endif %}"
+                                            data-action="decrease">
+                                        <i class="fa fa-minus"></i>
+                                    </button>
+                                </div>
+                                <input type="text" 
+                                       class="form-control form-control-sm bg-secondary border-0 text-center quantity-input" 
+                                       value="{{ item.so_luong }}" 
+                                       readonly
+                                       data-item-id="{% if user.is_authenticated %}{{ item.id }}{% else %}{{ item.id_session_key }}{% endif %}">
+                                <div class="input-group-btn">
+                                    <button type="button" 
+                                            class="btn btn-sm btn-primary quantity-btn btn-plus"
+                                            data-item-id="{% if user.is_authenticated %}{{ item.id }}{% else %}{{ item.id_session_key }}{% endif %}"
+                                            data-action="increase">
+                                        <i class="fa fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="align-middle item-total" data-item-id="{% if user.is_authenticated %}{{ item.id }}{% else %}{{ item.id_session_key }}{% endif %}">
+                            {{ item.tong_tien_item|floatformat:0 }} VNĐ
+                        </td>
+                        <td class="align-middle">
+                            <button type="button" 
+                                    class="btn btn-sm btn-danger remove-btn"
+                                    data-item-id="{% if user.is_authenticated %}{{ item.id }}{% else %}{{ item.id_session_key }}{% endif %}"
+                                    data-action="remove">
+                                <i class="fa fa-times"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
 
-    
+                    {% if not chi_tiet_gio_hang %}
+                    <tr>
+                        <td colspan="6" class="text-center p-4">
+                            <h5>Giỏ hàng của bạn đang trống.</h5>
+                            <a href="{% url 'trangchu:index' %}" class="btn btn-primary mt-2">Tiếp tục mua sắm</a>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
         
-        <div class="row px-xl-5">
-            <div class="col-lg-8 table-responsive mb-5">
-                <table class="table table-light table-borderless table-hover text-center mb-0">
+        <div class="col-lg-4">
+            <form class="mb-30" action="">
+                <div class="input-group">
+                    <input type="text" class="form-control border-0 p-4" placeholder="Coupon Code">
+                    <div class="input-group-append">
+                        <button class="btn btn-primary">Apply Coupon</button>
+                    </div>
+                </div>
+            </form>
+            <h5 class="section-title position-relative text-uppercase mb-3"><span class="bg-secondary pr-3">Cart Summary</span></h5>
+            <div class="bg-light p-30 mb-5">
+                <div class="border-bottom pb-2">
+                    <div class="d-flex justify-content-between mb-3">
+                        <h6>Subtotal (Tạm tính)</h6>
+                        <h6 id="cart-subtotal">{{ tong_tien|floatformat:0 }} VNĐ</h6>
+                    </div>
+                    <div class="d-flex justify-content-between">
+                        <h6 class="font-weight-medium">Shipping (Phí vận chuyển)</h6>
+                        <h6 class="font-weight-medium">{{ shipping_fee|floatformat:0 }} VNĐ</h6>
+                    </div>
+                </div>
+                <div class="pt-2">
+                    <div class="d-flex justify-content-between mt-2">
+                        <h5>Total (Thành tiền)</h5>
+                        <h5 id="cart-total">{{ thanh_tien|floatformat:0 }} VNĐ</h5>
+                    </div>
                     
-                    <thead class="thead-dark">
-                        <tr>
-                            <th>Products</th>
-                            <th>Price</th>
-                            <th>Size / Color</th>
-                            <th>Quantity</th>
-                            <th>Total</th>
-                            <th>Remove</th>
-                        </tr>
-                    </thead>
-                    
-                    <tbody class="align-middle">
-                        
-                        {% for item in chi_tiet_gio_hang %}
-                        <tr>
-                            <td class="align-middle text-left">
-                                <img src="{{ item.ma_san_pham.anh_dai_dien.url }}" alt="" style="width: 50px;"> 
-                                {{ item.ma_san_pham.ten_san_pham }}
-                            </td>
-
-                            <td class="align-middle">{{ item.ma_san_pham.giakm }} VNĐ</td>
-                            
-                            <td class="align-middle">{{ item.size }} / {{ item.color }}</td>
-
-                            <td class="align-middle">
-                                <form action="{% url 'quan_ly_gio_hang' %}" method="POST" class="d-inline">
-                                    {% csrf_token %}
-                                    
-                                    {% if user.is_authenticated %}
-                                        <input type="hidden" name="item_id" value="{{ item.id }}">
-                                    {% else %}
-                                        <input type="hidden" name="item_id" value="{{ item.id_session_key }}">
-                                    {% endif %}
-                                    
-                                    <div class="input-group quantity mx-auto" style="width: 100px;">
-                                        <div class="input-group-btn">
-                                            <button type="submit" name="action" value="decrease" class="btn btn-sm btn-primary btn-minus" >
-                                                <i class="fa fa-minus"></i>
-                                            </button>
-                                        </div>
-                                        <input type="text" class="form-control form-control-sm bg-secondary border-0 text-center" value="{{ item.so_luong }}" readonly>
-                                        <div class="input-group-btn">
-                                            <button type="submit" name="action" value="increase" class="btn btn-sm btn-primary btn-plus">
-                                                <i class="fa fa-plus"></i>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </form>
-                            </td>
-                            
-                            <td class="align-middle">{{ item.tong_tien_item }} VNĐ</td>
-                            
-                            <td class="align-middle">
-                                <form action="{% url 'quan_ly_gio_hang' %}" method="POST" class="d-inline">
-                                    {% csrf_token %}
-                                    {% if user.is_authenticated %}
-                                        <input type="hidden" name="item_id" value="{{ item.id }}">
-                                    {% else %}
-                                        <input type="hidden" name="item_id" value="{{ item.id_session_key }}">
-                                    {% endif %}
-                                    
-                                    <button type="submit" name="action" value="remove" class="btn btn-sm btn-danger"><i class="fa fa-times"></i></button>
-                                </form>
-                            </td>
-                        </tr>
-                        {% endfor %}
-
-                        {% if not chi_tiet_gio_hang %}
-                        <tr>
-                            <td colspan="6" class="text-center p-4"> <h5>Giỏ hàng của bạn đang trống.</h5>
-                                <a href="{% url 'index' %}" class="btn btn-primary mt-2">Tiếp tục mua sắm</a>
-                            </td>
-                        </tr>
-                        {% endif %}
-                        
-                    </tbody>
-                </table>
-            </div>
-            
-            <div class="col-lg-4">
-                <form class="mb-30" action="">
-                    <div class="input-group">
-                        <input type="text" class="form-control border-0 p-4" placeholder="Coupon Code">
-                        <div class="input-group-append">
-                            <button class="btn btn-primary">Apply Coupon</button>
-                        </div>
-                    </div>
-                </form>
-                <h5 class="section-title position-relative text-uppercase mb-3"><span class="bg-secondary pr-3">Cart Summary</span></h5>
-                <div class="bg-light p-30 mb-5">
-                    <div class="border-bottom pb-2">
-                        <div class="d-flex justify-content-between mb-3">
-                            <h6>Subtotal (Tạm tính)</h6>
-                            <h6>{{ tong_tien }} VNĐ</h6>
-                        </div>
-                        <div class="d-flex justify-content-between">
-                            <h6 class="font-weight-medium">Shipping (Phí vận chuyển)</h6>
-                            <h6 class="font-weight-medium">{{ shipping_fee }} VNĐ</h6>
-                        </div>
-                    </div>
-                    <div class="pt-2">
-                        <div class="d-flex justify-content-between mt-2">
-                            <h5>Total (Thành tiền)</h5>
-                            <h5>{{ thanh_tien }} VNĐ</h5>
-                        </div>
-                        
-{% if chi_tiet_gio_hang %}
-    <a href="{% url 'checkout' %}" class="btn btn-block btn-primary font-weight-bold my-3 py-3">Proceed To Checkout</a>
-{% else %}
-    <button class="btn btn-block btn-primary font-weight-bold my-3 py-3" disabled>Proceed To Checkout</button>
-{% endif %}
-                    </div>
+                    {% if chi_tiet_gio_hang %}
+                    <a href="{% url 'donhang:checkout' %}" class="btn btn-block btn-primary font-weight-bold my-3 py-3">Proceed To Checkout</a>
+                    {% else %}
+                    <button class="btn btn-block btn-primary font-weight-bold my-3 py-3" disabled>Proceed To Checkout</button>
+                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
+</div>
 {% endblock %}
 
 {% block jsblock %}
-    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
-    <script src="{% static 'lib/easing/easing.min.js' %}"></script>
-    <script src="{% static 'lib/owlcarousel/owl.carousel.min.js' %}"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.4.1/js/bootstrap.bundle.min.js"></script>
+<script src="{% static 'lib/easing/easing.min.js' %}"></script>
+<script src="{% static 'lib/owlcarousel/owl.carousel.min.js' %}"></script>
+<script src="{% static 'js/main.js' %}"></script>
 
-    <script src="{% static 'js/main.js' %}"></script>
+<script>
+$(document).ready(function() {
+    // Hàm format số
+    function formatNumber(num) {
+        return Math.round(num).toLocaleString('vi-VN');
+    }
+
+    // Hàm cập nhật giỏ hàng qua AJAX
+    function updateCart(itemId, action) {
+        $.ajax({
+            url: "{% url 'giohang:quan_ly_gio_hang' %}",
+            method: 'POST',
+            data: {
+                'item_id': itemId,
+                'action': action,
+                'csrfmiddlewaretoken': '{{ csrf_token }}'
+            },
+            success: function(response) {
+                if (response.success) {
+                    const row = $('tr[data-item-id="' + itemId + '"]');
+                    const quantityInput = row.find('.quantity-input[data-item-id="' + itemId + '"]');
+                    const totalCell = row.find('.item-total[data-item-id="' + itemId + '"]');
+                    
+                    if (response.removed) {
+                        // Xóa hàng với animation
+                        row.addClass('removing');
+                        setTimeout(function() {
+                            row.remove();
+                            // Kiểm tra nếu giỏ hàng trống
+                            if ($('#cart-items tr.cart-item-row').length === 0) {
+                                location.reload();
+                            }
+                        }, 300);
+                    } else {
+                        // Cập nhật số lượng và tổng tiền
+                        quantityInput.val(response.so_luong);
+                        totalCell.text(formatNumber(response.tong_tien_item) + ' VNĐ');
+                    }
+                    
+                    // Cập nhật tổng tiền giỏ hàng
+                    $('#cart-subtotal').text(formatNumber(response.tong_tien) + ' VNĐ');
+                    $('#cart-total').text(formatNumber(response.thanh_tien) + ' VNĐ');
+                    
+                    // Hiển thị thông báo
+                    showNotification(response.message, 'success');
+                } else {
+                    showNotification(response.message || 'Có lỗi xảy ra', 'error');
+                }
+            },
+            error: function(xhr, status, error) {
+                showNotification('Có lỗi xảy ra. Vui lòng thử lại.', 'error');
+            }
+        });
+    }
+
+    // Hàm hiển thị thông báo
+    function showNotification(message, type) {
+        const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+        const alert = $('<div class="alert ' + alertClass + ' alert-dismissible fade show position-fixed" style="top: 20px; right: 20px; z-index: 9999; min-width: 300px;">' +
+            message +
+            '<button type="button" class="close" data-dismiss="alert">&times;</button>' +
+            '</div>');
+        $('body').append(alert);
+        setTimeout(function() {
+            alert.fadeOut(function() {
+                $(this).remove();
+            });
+        }, 3000);
+    }
+
+    // Xử lý nút tăng/giảm số lượng
+    $(document).on('click', '.quantity-btn', function(e) {
+        e.preventDefault();
+        const itemId = $(this).data('item-id');
+        const action = $(this).data('action');
+        updateCart(itemId, action);
+    });
+
+    // Xử lý nút xóa
+    $(document).on('click', '.remove-btn', function(e) {
+        e.preventDefault();
+        if (confirm('Bạn có chắc muốn xóa sản phẩm này?')) {
+            const itemId = $(this).data('item-id');
+            updateCart(itemId, 'remove');
+        }
+    });
+});
+</script>
 {% endblock %}

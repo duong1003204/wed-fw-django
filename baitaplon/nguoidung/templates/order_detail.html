@@ -35,8 +35,8 @@
         <div class="row px-xl-5">
             <div class="col-12">
                 <nav class="breadcrumb bg-light mb-30">
-                    <a class="breadcrumb-item text-dark" href="{% url 'index' %}">Home</a>
-                    <a class="breadcrumb-item text-dark" href="{% url 'profile' %}">Trang Cá Nhân</a>
+                    <a class="breadcrumb-item text-dark" href="{% url 'trangchu:index' %}">Home</a>
+                    <a class="breadcrumb-item text-dark" href="{% url 'nguoidung:profile' %}">Trang Cá Nhân</a>
                     <span class="breadcrumb-item active">Chi Tiết Đơn Hàng #{{ order.id }}</span>
                 </nav>
             </div>
@@ -45,7 +45,7 @@
     <div class="container-fluid">
         <div class="row px-xl-5">
             <div class="col-12 mb-4">
-                <a href="{% url 'profile' %}" class="btn btn-secondary"><i class="fa fa-arrow-left mr-2"></i> Quay lại lịch sử</a>
+                <a href="{% url 'nguoidung:profile' %}" class="btn btn-secondary"><i class="fa fa-arrow-left mr-2"></i> Quay lại lịch sử</a>
             </div>
 
             <div class="col-lg-4">

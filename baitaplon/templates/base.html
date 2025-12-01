@@ -1,63 +1,418 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 
 <head>
-
     <meta charset="utf-8">
-    <title>MultiShop - Online Shop Website Template</title>
+    <title>{% block title %}MultiShop - Online Shop Website{% endblock %}</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="keywords" content="Free HTML Templates">
-    <meta name="description" content="Free HTML Templates">
+    <meta name="keywords" content="Online Shop, E-commerce, Shopping">
+    <meta name="description" content="MultiShop - Cửa hàng trực tuyến hàng đầu">
+    
+    <!-- Preload fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    <!-- Global Styles -->
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        :root {
+            --primary-color: #FFD333;
+            --secondary-color: #3D464D;
+            --accent-color: #FF6B6B;
+            --text-dark: #333;
+            --text-light: #666;
+            --bg-light: #F5F5F5;
+            --border-color: #E0E0E0;
+            --shadow-sm: 0 2px 8px rgba(0,0,0,0.08);
+            --shadow-md: 0 4px 16px rgba(0,0,0,0.12);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.16);
+            --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        body {
+            font-family: 'Roboto', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: var(--text-dark);
+            line-height: 1.6;
+            overflow-x: hidden;
+            background: #fff;
+        }
+        
+        /* Smooth scrolling */
+        html {
+            scroll-behavior: smooth;
+        }
+        
+        /* Loading animation */
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+        
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+        
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+        
+        @keyframes shimmer {
+            0% {
+                background-position: -1000px 0;
+            }
+            100% {
+                background-position: 1000px 0;
+            }
+        }
+        
+        /* Alert animations */
+        .alert {
+            animation: slideIn 0.3s ease-out;
+            border-radius: 12px;
+            border: none;
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 1rem;
+        }
+        
+        .alert-dismissible .close {
+            padding: 0.5rem 1rem;
+        }
+        
+        /* Button improvements */
+        .btn {
+            transition: var(--transition);
+            border-radius: 8px;
+            font-weight: 500;
+            padding: 10px 24px;
+            border: none;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0;
+            height: 0;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.3);
+            transform: translate(-50%, -50%);
+            transition: width 0.6s, height 0.6s;
+        }
+        
+        .btn:hover::before {
+            width: 300px;
+            height: 300px;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, #FFD333 0%, #FFB800 100%);
+            color: #333;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #FFB800 0%, #FFD333 100%);
+            color: #333;
+        }
+        
+        /* Card improvements */
+        .card, .product-item, .bg-light {
+            transition: var(--transition);
+            border-radius: 12px;
+        }
+        
+        .product-item:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        /* Image lazy loading effect */
+        img {
+            transition: opacity 0.3s;
+        }
+        
+        img[loading="lazy"] {
+            opacity: 0;
+        }
+        
+        img[loading="lazy"].loaded {
+            opacity: 1;
+        }
+        
+        /* Search suggestions */
         #search-suggestions {
-    max-height: 300px;
-    overflow-y: auto;
-}
-#search-suggestions a:hover {
-    background-color: #f1f1f1;
-}
-
+            max-height: 400px;
+            overflow-y: auto;
+            border-radius: 12px;
+            box-shadow: var(--shadow-lg);
+            animation: fadeIn 0.3s ease-out;
+        }
+        
+        #search-suggestions a {
+            transition: var(--transition);
+        }
+        
+        #search-suggestions a:hover {
+            background-color: var(--bg-light);
+            transform: translateX(5px);
+        }
+        
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #FFD333 0%, #FFB800 100%);
+            border-radius: 5px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: linear-gradient(135deg, #FFB800 0%, #FFD333 100%);
+        }
+        
+        /* Page transitions */
+        .page-content {
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        /* Loading spinner */
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #fff;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Back to top button */
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            background: linear-gradient(135deg, #FFD333 0%, #FFB800 100%);
+            color: #333;
+            border-radius: 50%;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: var(--shadow-md);
+            transition: var(--transition);
+            z-index: 1000;
+        }
+        
+        .back-to-top:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+        
+        .back-to-top.show {
+            display: flex;
+            animation: fadeIn 0.3s;
+        }
+        
+        /* Responsive improvements */
+        @media (max-width: 768px) {
+            .container-fluid {
+                padding-left: 15px;
+                padding-right: 15px;
+            }
+        }
+        
+        /* Smooth page load */
+        body.loading {
+            overflow: hidden;
+        }
+        
+        .page-loader {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            transition: opacity 0.5s;
+        }
+        
+        .page-loader.hidden {
+            opacity: 0;
+            pointer-events: none;
+        }
     </style>
-    <!-- ✅ Block chứa CSS  -->
-    {% block cssblock %}
-
-
-    {% endblock cssblock %}
+    
+    {% block cssblock %}{% endblock cssblock %}
 </head>
 
 <body>
+    <!-- Page Loader -->
+    <div class="page-loader" id="pageLoader">
+        <div class="spinner"></div>
+    </div>
 
     <!-- Navbar -->
-{% include 'navbar.html' %}
+    {% include 'navbar.html' %}
 
-    <!-- Nội dung -->
-{% if messages %}
-<div class="container mt-2">
-    {% for message in messages %}
-        <div class="alert alert-{{ message.tags }} alert-dismissible fade show small-alert" role="alert">
-            {{ message }}
-            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-        </div>
-    {% endfor %}
-</div>
-{% endif %}
+    <!-- Messages -->
+    {% if messages %}
+    <div class="container mt-3">
+        {% for message in messages %}
+            <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                <i class="fas fa-{% if message.tags == 'success' %}check-circle{% elif message.tags == 'error' or message.tags == 'danger' %}exclamation-triangle{% else %}info-circle{% endif %}"></i>
+                {{ message }}
+                <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 
-
-{% block content %}
-
-{% endblock content %}
+    <!-- Main Content -->
+    <div class="page-content">
+        {% block content %}{% endblock content %}
+    </div>
 
     <!-- Footer -->
-{% include 'footer.html' %}
+    {% include 'footer.html' %}
+    
+    <!-- Back to Top Button -->
+    <div class="back-to-top" id="backToTop">
+        <i class="fas fa-arrow-up"></i>
+    </div>
 
-    <!-- Các file JS -->
-{% block jsblock %}
-
-
-
-{% endblock jsblock %}
-
+    <!-- JavaScript -->
+    {% block jsblock %}{% endblock jsblock %}
+    
+    <!-- Global JavaScript -->
+    <script>
+        // Page loader
+        window.addEventListener('load', function() {
+            const loader = document.getElementById('pageLoader');
+            if (loader) {
+                setTimeout(() => {
+                    loader.classList.add('hidden');
+                    document.body.classList.remove('loading');
+                }, 300);
+            }
+        });
+        
+        // Back to top button
+        const backToTop = document.getElementById('backToTop');
+        if (backToTop) {
+            window.addEventListener('scroll', function() {
+                if (window.pageYOffset > 300) {
+                    backToTop.classList.add('show');
+                } else {
+                    backToTop.classList.remove('show');
+                }
+            });
+            
+            backToTop.addEventListener('click', function() {
+                window.scrollTo({
+                    top: 0,
+                    behavior: 'smooth'
+                });
+            });
+        }
+        
+        // Auto dismiss alerts
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                const bsAlert = new bootstrap.Alert(alert);
+                setTimeout(() => bsAlert.close(), 5000);
+            });
+        }, 100);
+        
+        // Lazy load images
+        if ('loading' in HTMLImageElement.prototype) {
+            const images = document.querySelectorAll('img[loading="lazy"]');
+            images.forEach(img => {
+                img.addEventListener('load', function() {
+                    this.classList.add('loaded');
+                });
+            });
+        }
+        
+        // Smooth scroll for anchor links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                const href = this.getAttribute('href');
+                if (href !== '#' && href !== '') {
+                    e.preventDefault();
+                    const target = document.querySelector(href);
+                    if (target) {
+                        target.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'start'
+                        });
+                    }
+                }
+            });
+        });
+        
+        // Add loading state to forms
+        document.querySelectorAll('form').forEach(form => {
+            form.addEventListener('submit', function() {
+                const submitBtn = this.querySelector('button[type="submit"], input[type="submit"]');
+                if (submitBtn && !submitBtn.disabled) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<span class="spinner"></span> Đang xử lý...';
+                }
+            });
+        });
+    </script>
 </body>
 </html>

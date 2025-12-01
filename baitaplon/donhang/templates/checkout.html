@@ -18,14 +18,14 @@
         <div class="row px-xl-5">
             <div class="col-12">
                 <nav class="breadcrumb bg-light mb-30">
-                    <a class="breadcrumb-item text-dark" href="{% url 'index' %}">Home</a>
-                    <a class="breadcrumb-item text-dark" href="{% url 'shop' %}">Shop</a>
+                    <a class="breadcrumb-item text-dark" href="{% url 'trangchu:index' %}">Home</a>
+                    <a class="breadcrumb-item text-dark" href="{% url 'sanpham:shop' %}">Shop</a>
                     <span class="breadcrumb-item active">Checkout</span>
                 </nav>
             </div>
         </div>
     </div>
-    <form action="{% url 'place_order' %}" method="POST">
+    <form action="{% url 'donhang:place_order' %}" method="POST">
         {% csrf_token %}
         <div class="container-fluid">
             <div class="row px-xl-5">

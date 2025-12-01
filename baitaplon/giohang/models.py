@@ -30,5 +30,9 @@ class ChiTietGioHang(models.Model):
     # Giúp template cart.html gọi .tong_tien_item dễ dàng
     @property
     def tong_tien_item(self):
-        gia = self.ma_san_pham.giakm if self.ma_san_pham.giakm is not None else 0
+        # Sử dụng giá khuyến mãi nếu có và > 0, nếu không thì dùng giá gốc
+        if self.ma_san_pham.giakm and self.ma_san_pham.giakm > 0:
+            gia = self.ma_san_pham.giakm
+        else:
+            gia = self.ma_san_pham.gia
         return gia * self.so_luong

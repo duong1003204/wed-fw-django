@@ -82,11 +82,12 @@ class SanPhamForm(forms.ModelForm):
 @admin.register(SanPham)
 class SanPhamAdmin(admin.ModelAdmin):
     form = SanPhamForm
-    list_display = ('ten_san_pham', 'ma_danh_muc', 'gia', 'trang_thai', 'xem_anh')
-    search_fields = ('ten_san_pham',)
+    list_display = ('ten_san_pham', 'ma_danh_muc', 'gia', 'giakm', 'trang_thai', 'xem_anh')
+    search_fields = ('ten_san_pham', 'mo_ta')
     list_filter = ('ma_danh_muc', 'trang_thai')
     readonly_fields = ('xem_anh',)
     inlines = [BienTheInline]
+    list_per_page = 25
 
     def xem_anh(self, obj):
         if obj.anh_dai_dien:

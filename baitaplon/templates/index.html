@@ -106,7 +106,7 @@
         <div class="row px-xl-5 pb-3">
             {% for dm_slsp in  danhmuc_slsp%}
             <div class="col-lg-3 col-md-4 col-sm-6 pb-1">
-                <a class="text-decoration-none" href="{% url 'shop_danhmuc' dm_slsp.id %}">
+                <a class="text-decoration-none" href="{% url 'sanpham:shop_danhmuc' dm_slsp.id %}">
                     <div class="cat-item img-zoom d-flex align-items-center mb-4">
                         <div class="overflow-hidden" style="width: 100px; height: 100px;">
                             <img class="img-fluid" src="" alt="">
@@ -130,8 +130,8 @@
                     <div class="product-img position-relative overflow-hidden">
                         <img class="img-fluid w-100" src="{{ sp.anh_dai_dien.url }}" alt="">
                         <div class="product-action">
-                            <a class="btn btn-outline-dark btn-square" href="{% url 'chitietsanpham' sp.id %}"><i class="fa fa-shopping-cart"></i></a>
-                            <a class="btn btn-outline-dark btn-square" href="{% url 'chitietsanpham' sp.id %}"><i class="fa fa-search"></i></a>
+                            <a class="btn btn-outline-dark btn-square" href="{% url 'sanpham:chitietsanpham' sp.id %}"><i class="fa fa-shopping-cart"></i></a>
+                            <a class="btn btn-outline-dark btn-square" href="{% url 'sanpham:chitietsanpham' sp.id %}"><i class="fa fa-search"></i></a>
                         </div>
                     </div>
                     <div class="text-center py-4">
@@ -181,8 +181,8 @@
                     <div class="product-img position-relative overflow-hidden">
                         <img class="img-fluid w-100" src="{{ sp.anh_dai_dien.url }}" alt="">
                         <div class="product-action">
-                            <a class="btn btn-outline-dark btn-square" href="{% url 'chitietsanpham' sp.id %}"><i class="fa fa-shopping-cart"></i></a>
-                            <a class="btn btn-outline-dark btn-square" href="{% url 'chitietsanpham' sp.id %}"><i class="fa fa-search"></i></a>
+                            <a class="btn btn-outline-dark btn-square" href="{% url 'sanpham:chitietsanpham' sp.id %}"><i class="fa fa-shopping-cart"></i></a>
+                            <a class="btn btn-outline-dark btn-square" href="{% url 'sanpham:chitietsanpham' sp.id %}"><i class="fa fa-search"></i></a>
                         </div>
                     </div>
                     <div class="text-center py-4">

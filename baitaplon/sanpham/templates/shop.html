@@ -60,71 +60,13 @@
                 </div>
                 </form>
             <div class="col-lg-9 col-md-8">
-                <div class="row pb-3">
+                <div class="row pb-3" id="products-container">
                     <div class="col-12 pb-1">
                         </div>
                     
-                    {% for sp in sanpham %}
-                    <div class="col-lg-4 col-md-6 col-sm-6 pb-1">
-                        <div class="product-item bg-light mb-4">
-                            <div class="product-img position-relative overflow-hidden">
-                                <img class="img-fluid w-100" src="{{ sp.anh_dai_dien.url }}" alt="">
-                                <div class="product-action">
-                                    <a class="btn btn-outline-dark btn-square" href="{% url 'chitietsanpham' sp.id %}"><i class="fa fa-shopping-cart"></i></a>
-                                    <a class="btn btn-outline-dark btn-square" href="{% url 'chitietsanpham' sp.id %}"><i class="fa fa-search"></i></a>
-                                </div>
-                            </div>
-                            <div class="text-center py-4">
-                                <a class="h6 text-decoration-none text-truncate" href="">{{ sp.ten_san_pham }}</a>
-                                <div class="d-flex align-items-center justify-content-center mt-2">
-                                    <h5>{{ sp.giakm }}</h5><h6 class="text-muted ml-2"><del>{{ sp.gia }}</del></h6>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    {% endfor %}
+                    {% include 'shop_products.html' %}
                     
-                    <div class="col-12">
-                        {% if sanpham.has_other_pages %}
-                        <nav>
-                          <ul class="pagination justify-content-center">
-                            
-                            {% with '' as query_string %}
-                                {% if query %}{% with query_string|add:"&timkiem="|add:query as query_string %}{% endwith %}{% endif %}
-                                {% for p in selected_prices %}{% with query_string|add:"&price="|add:p as query_string %}{% endwith %}{% endfor %}
-                                {% for c in selected_colors %}{% with query_string|add:"&color="|add:c as query_string %}{% endwith %}{% endfor %}
-                                {% for s in selected_sizes %}{% with query_string|add:"&size="|add:s as query_string %}{% endwith %}{% endfor %}
-                            {% endwith %}
-
-                            {% if sanpham.has_previous %}
-                              <li class="page-item">
-                                <a class="page-link" href="?page={{ sanpham.previous_page_number }}{{ query_string }}">Previous</a>
-                              </li>
-                            {% else %}
-                              <li class="page-item disabled"><a class="page-link" href="#">Previous</a></li>
-                            {% endif %}
-                            
-                            {% for i in sanpham.paginator.page_range %}
-                              {% if sanpham.number == i %}
-                                <li class="page-item active"><a class="page-link" href="#">{{ i }}</a></li>
-                              {% else %}
-                                <li class="page-item"><a class="page-link" href="?page={{ i }}{{ query_string }}">{{ i }}</a></li>
-                              {% endif %}
-                            {% endfor %}
-                            
-                            {% if sanpham.has_next %}
-                              <li class="page-item">
-                                <a class="page-link" href="?page={{ sanpham.next_page_number }}{{ query_string }}">Next</a>
-                              </li>
-                            {% else %}
-                              <li class="page-item disabled"><a class="page-link" href="#">Next</a></li>
-                            {% endif %}
-
-                          </ul>
-                        </nav>
-                        {% endif %}
-                    </div>
-                    </div>
+                </div>
             </div>
             </div>
     </div>
@@ -141,10 +83,84 @@
 
     <script>
         $(document).ready(function() {
+            let filterTimeout;
+            
+            // Hàm load sản phẩm qua AJAX
+            function loadProducts(page = 1) {
+                const form = $('form.col-lg-3');
+                
+                // Serialize form data (GET request nên dùng serialize, không dùng FormData)
+                let formData = form.serialize();
+                
+                // Thêm page number
+                if (formData) {
+                    formData += '&page=' + page;
+                } else {
+                    formData = 'page=' + page;
+                }
+                
+                // Thêm query search nếu có
+                const urlParams = new URLSearchParams(window.location.search);
+                const timkiem = urlParams.get('timkiem');
+                if (timkiem) {
+                    formData += '&timkiem=' + encodeURIComponent(timkiem);
+                }
+                
+                // Hiển thị loading
+                $('#products-container').html('<div class="col-12 text-center py-5"><div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div></div>');
+                
+                // Gửi AJAX request
+                $.ajax({
+                    url: "{% url 'sanpham:shop_filter_ajax' %}",
+                    method: 'GET',
+                    data: formData,
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response.success) {
+                            $('#products-container').html(response.html);
+                            
+                            // Scroll to top
+                            $('html, body').animate({
+                                scrollTop: $('.col-lg-9').offset().top - 100
+                            }, 300);
+                            
+                            // Gắn lại event cho pagination
+                            $(document).off('click', '.pagination-link').on('click', '.pagination-link', function(e) {
+                                e.preventDefault();
+                                const page = $(this).data('page');
+                                if (page) {
+                                    loadProducts(page);
+                                }
+                            });
+                        } else {
+                            $('#products-container').html('<div class="col-12"><div class="alert alert-warning">Không tìm thấy sản phẩm nào.</div></div>');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('AJAX Error:', error);
+                        $('#products-container').html('<div class="col-12"><div class="alert alert-danger">Có lỗi xảy ra. Vui lòng thử lại.</div></div>');
+                    }
+                });
+            }
+            
             // Gán sự kiện 'change' cho tất cả checkbox có class 'filter-check'
-            $('.filter-check').on('change', function() {
-                // Khi có thay đổi, submit form cha gần nhất
-                $(this).closest('form').submit();
+            $('.filter-check').on('change', function(e) {
+                e.preventDefault();
+                clearTimeout(filterTimeout);
+                
+                // Debounce: đợi 300ms sau khi người dùng ngừng click
+                filterTimeout = setTimeout(function() {
+                    loadProducts(1); // Reset về trang 1 khi filter
+                }, 300);
+            });
+            
+            // Gắn event cho pagination
+            $(document).on('click', '.pagination-link', function(e) {
+                e.preventDefault();
+                const page = $(this).data('page');
+                if (page) {
+                    loadProducts(page);
+                }
             });
         });
     </script>

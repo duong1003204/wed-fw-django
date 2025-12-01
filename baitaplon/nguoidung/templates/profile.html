@@ -35,7 +35,7 @@
         <div class="row px-xl-5">
             <div class="col-12">
                 <nav class="breadcrumb bg-light mb-30">
-                    <a class="breadcrumb-item text-dark" href="{% url 'index' %}">Home</a>
+                    <a class="breadcrumb-item text-dark" href="{% url 'trangchu:index' %}">Home</a>
                     <span class="breadcrumb-item active">Trang Cá Nhân</span>
                 </nav>
             </div>
@@ -61,7 +61,7 @@
                         <div class="bg-light p-30">
                             <h4 class="mb-4 text-uppercase">Thông tin cá nhân</h4>
                             
-                            <form method="POST" action="{% url 'profile' %}">
+                            <form method="POST" action="{% url 'nguoidung:profile' %}">
                                 {% csrf_token %}
                                 <input type="hidden" name="action" value="update_profile">
                                 
@@ -123,11 +123,11 @@
                                                 {% endif %}
                                             </td>
                                             <td class="align-middle">
-                                                <a href="{% url 'order_detail' order.id %}" class="btn btn-sm btn-primary">Xem</a>
+                                                <a href="{% url 'nguoidung:order_detail' order.id %}" class="btn btn-sm btn-primary">Xem</a>
                                             </td>
                                             <td class="align-middle">
                                                 {% if order.trang_thai_don_hang == 'cho_xu_ly' %}
-                                                <form method="POST" action="{% url 'cancel_order' order.id %}" onsubmit="return confirm('Bạn có chắc chắn muốn hủy đơn hàng #{[ order.id ]} không?');">
+                                                <form method="POST" action="{% url 'nguoidung:cancel_order' order.id %}" onsubmit="return confirm('Bạn có chắc chắn muốn hủy đơn hàng #{[ order.id ]} không?');">
                                                     {% csrf_token %}
                                                     <button type="submit" class="btn btn-sm btn-danger">Hủy</button>
                                                 </form>
@@ -159,7 +159,7 @@
                                 </div>
                             {% endif %}
                             
-                            <form method="POST" action="{% url 'profile' %}">
+                            <form method="POST" action="{% url 'nguoidung:profile' %}">
                                 {% csrf_token %}
                                 <input type="hidden" name="action" value="change_password">
                                 

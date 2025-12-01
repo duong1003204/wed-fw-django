@@ -25,11 +25,19 @@ class DonHang(models.Model):
 
     def __str__(self):
         return f"Đơn hàng #{self.id} - {self.ma_nguoi_dung.ho_ten}"
+    
+    def get_trang_thai_display_name(self):
+        """Trả về tên hiển thị của trạng thái đơn hàng"""
+        return dict(self.TRANG_THAI_CHOICES).get(self.trang_thai_don_hang, self.trang_thai_don_hang)
 
 class ChiTietDonHang(models.Model):
     ma_don_hang = models.ForeignKey(DonHang, on_delete=models.CASCADE, related_name="chi_tiet")
     ma_san_pham = models.ForeignKey(SanPham, on_delete=models.CASCADE)
     so_luong = models.IntegerField(default=1) # Thêm default
+    
+    # Thêm size và color để biết giảm biến thể nào
+    size = models.CharField(max_length=50, null=True, blank=True)
+    color = models.CharField(max_length=50, null=True, blank=True)
     
     # SỬA LỖI: Thêm default=0
     gia = models.DecimalField(max_digits=10, decimal_places=2, default=0)

@@ -1,11 +1,9 @@
-
-from django.urls import include, path
-
-from giohang import views
+from django.urls import path
 from .views import index, contact
 
+app_name = 'trangchu'
+
 urlpatterns = [
-    path('',index, name = 'index'),
-    
+    path('', index, name='index'),
     path('contact/', contact, name='contact'),
 ]

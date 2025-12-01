@@ -1,5 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
-from django.views.decorators.http import require_POST
+from django.views.decorators.http import require_POST, require_http_methods
+from django.http import JsonResponse
 from sanpham.models import DanhMuc, SanPham
 from .models import GioHang, ChiTietGioHang
 from django.contrib import messages
@@ -14,7 +15,7 @@ def them_vao_gio_hang(request):
 
     if not san_pham_id or not size or not color:
         messages.error(request, 'Lỗi: Vui lòng chọn đầy đủ Size và Màu sắc.')
-        return redirect(request.META.get('HTTP_REFERER', 'index'))
+        return redirect(request.META.get('HTTP_REFERER', '/'))
     
     try:
         so_luong = int(request.POST.get('so_luong', 1))
@@ -27,7 +28,7 @@ def them_vao_gio_hang(request):
         san_pham = SanPham.objects.get(id=san_pham_id)
     except SanPham.DoesNotExist:
         messages.error(request, 'Lỗi: Sản phẩm này không tồn tại.')
-        return redirect(request.META.get('HTTP_REFERER', 'index'))
+        return redirect(request.META.get('HTTP_REFERER', '/'))
 
     product_key = f"{san_pham_id}_{size}_{color}"
 
@@ -65,7 +66,7 @@ def them_vao_gio_hang(request):
         request.session['giohang'] = gio_hang_session
 
     messages.success(request, f'Đã thêm "{san_pham.ten_san_pham} ({size}, {color})" vào giỏ hàng.')
-    return redirect('gio_hang_view')
+    return redirect('giohang:gio_hang_view')
 
 def gio_hang_view(request):
     chi_tiet_gio_hang_list = []
@@ -98,7 +99,11 @@ def gio_hang_view(request):
                 
                 san_pham = SanPham.objects.get(id=int(san_pham_id))
                 
-                gia_san_pham = san_pham.giakm if san_pham.giakm is not None else 0
+                # Sử dụng giá khuyến mãi nếu có và > 0, nếu không thì dùng giá gốc
+                if san_pham.giakm and san_pham.giakm > 0:
+                    gia_san_pham = san_pham.giakm
+                else:
+                    gia_san_pham = san_pham.gia
                 tong_tien_item = gia_san_pham * so_luong
                 tong_tien += tong_tien_item
                 
@@ -125,66 +130,124 @@ def gio_hang_view(request):
     }
     return render(request, 'cart.html', context)
 
-@require_POST
+@require_http_methods(["POST"])
 def quan_ly_gio_hang(request):
-    item_id = request.POST.get('item_id') # Đây là 'id' (DB) hoặc 'id_session_key' (Session)
+    """Xử lý tăng/giảm/xóa sản phẩm trong giỏ hàng - Trả về JSON cho AJAX"""
+    item_id = request.POST.get('item_id')
     action = request.POST.get('action') # 'increase', 'decrease', 'remove'
 
     if not item_id or not action:
-        messages.error(request, 'Yêu cầu không hợp lệ.')
-        return redirect('gio_hang_view')
+        return JsonResponse({'success': False, 'message': 'Yêu cầu không hợp lệ.'}, status=400)
 
-    if request.user.is_authenticated:
-        try:
-            # item_id ở đây là ChiTietGioHang.id
+    try:
+        if request.user.is_authenticated:
+            # Xử lý cho user đã đăng nhập
             chi_tiet = ChiTietGioHang.objects.get(id=item_id, ma_gio_hang__ma_nguoi_dung=request.user)
             
             if action == 'increase':
                 chi_tiet.so_luong += 1
                 chi_tiet.save()
-                messages.success(request, 'Đã tăng số lượng.')
+                so_luong_moi = chi_tiet.so_luong
+                tong_tien_item = float(chi_tiet.tong_tien_item)
+                message = 'Đã tăng số lượng.'
             
             elif action == 'decrease':
                 chi_tiet.so_luong -= 1
                 if chi_tiet.so_luong <= 0:
-                    chi_tiet.delete() # Xóa nếu về 0
-                    messages.success(request, 'Đã xóa sản phẩm.')
+                    chi_tiet.delete()
+                    so_luong_moi = 0
+                    tong_tien_item = 0
+                    message = 'Đã xóa sản phẩm.'
                 else:
                     chi_tiet.save()
-                    messages.success(request, 'Đã giảm số lượng.')
+                    so_luong_moi = chi_tiet.so_luong
+                    tong_tien_item = float(chi_tiet.tong_tien_item)
+                    message = 'Đã giảm số lượng.'
             
             elif action == 'remove':
                 chi_tiet.delete()
-                messages.success(request, 'Đã xóa sản phẩm.')
-        
-        except ChiTietGioHang.DoesNotExist:
-            messages.error(request, 'Không tìm thấy sản phẩm.')
-    
-    else:
-       
-        gio_hang_session = request.session.get('giohang', {})
-        
-        if item_id not in gio_hang_session:
-            messages.error(request, 'Không tìm thấy sản phẩm.')
-            return redirect('gio_hang_view')
-
-        if action == 'increase':
-            gio_hang_session[item_id]['so_luong'] += 1
-            messages.success(request, 'Đã tăng số lượng.')
-        
-        elif action == 'decrease':
-            gio_hang_session[item_id]['so_luong'] -= 1
-            if gio_hang_session[item_id]['so_luong'] <= 0:
-                del gio_hang_session[item_id] # Xóa nếu về 0
-                messages.success(request, 'Đã xóa sản phẩm.')
+                so_luong_moi = 0
+                tong_tien_item = 0
+                message = 'Đã xóa sản phẩm.'
             else:
-                messages.success(request, 'Đã giảm số lượng.')
+                return JsonResponse({'success': False, 'message': 'Hành động không hợp lệ.'}, status=400)
         
-        elif action == 'remove':
-            del gio_hang_session[item_id]
-            messages.success(request, 'Đã xóa sản phẩm.')
-        
-        request.session['giohang'] = gio_hang_session
+        else:
+            # Xử lý cho user chưa đăng nhập (session)
+            gio_hang_session = request.session.get('giohang', {})
+            
+            if item_id not in gio_hang_session:
+                return JsonResponse({'success': False, 'message': 'Không tìm thấy sản phẩm.'}, status=404)
 
-    return redirect('gio_hang_view')
+            if action == 'increase':
+                gio_hang_session[item_id]['so_luong'] += 1
+                so_luong_moi = gio_hang_session[item_id]['so_luong']
+                message = 'Đã tăng số lượng.'
+            
+            elif action == 'decrease':
+                gio_hang_session[item_id]['so_luong'] -= 1
+                if gio_hang_session[item_id]['so_luong'] <= 0:
+                    del gio_hang_session[item_id]
+                    so_luong_moi = 0
+                    message = 'Đã xóa sản phẩm.'
+                else:
+                    so_luong_moi = gio_hang_session[item_id]['so_luong']
+                    message = 'Đã giảm số lượng.'
+            
+            elif action == 'remove':
+                del gio_hang_session[item_id]
+                so_luong_moi = 0
+                message = 'Đã xóa sản phẩm.'
+            else:
+                return JsonResponse({'success': False, 'message': 'Hành động không hợp lệ.'}, status=400)
+            
+            request.session['giohang'] = gio_hang_session
+            
+            # Tính lại tổng tiền cho session
+            tong_tien_item = 0
+            if so_luong_moi > 0 and item_id in gio_hang_session:
+                try:
+                    san_pham = SanPham.objects.get(id=int(gio_hang_session[item_id]['san_pham_id']))
+                    gia = float(san_pham.giakm) if san_pham.giakm and san_pham.giakm > 0 else float(san_pham.gia)
+                    tong_tien_item = gia * so_luong_moi
+                except:
+                    tong_tien_item = 0
+
+        # Tính lại tổng tiền giỏ hàng
+        tong_tien = 0
+        if request.user.is_authenticated:
+            try:
+                gio_hang = GioHang.objects.get(ma_nguoi_dung=request.user)
+                chi_tiet_list = ChiTietGioHang.objects.filter(ma_gio_hang=gio_hang)
+                for item in chi_tiet_list:
+                    tong_tien += float(item.tong_tien_item)
+            except:
+                tong_tien = 0
+        else:
+            gio_hang_session = request.session.get('giohang', {})
+            for product_key, item_details in gio_hang_session.items():
+                try:
+                    san_pham = SanPham.objects.get(id=int(item_details['san_pham_id']))
+                    gia = float(san_pham.giakm) if san_pham.giakm and san_pham.giakm > 0 else float(san_pham.gia)
+                    tong_tien += gia * item_details['so_luong']
+                except:
+                    continue
+
+        shipping_fee = 0
+        thanh_tien = tong_tien + shipping_fee
+
+        return JsonResponse({
+            'success': True,
+            'message': message,
+            'so_luong': so_luong_moi,
+            'tong_tien_item': tong_tien_item,
+            'tong_tien': tong_tien,
+            'thanh_tien': thanh_tien,
+            'removed': so_luong_moi == 0
+        })
+
+    except ChiTietGioHang.DoesNotExist:
+        return JsonResponse({'success': False, 'message': 'Không tìm thấy sản phẩm.'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'Lỗi: {str(e)}'}, status=500)
 
